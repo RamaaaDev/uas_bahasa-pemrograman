@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pomodoro Timer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        let workTime = {{ work_time }};
+        let shortBreak = {{ short_break }};
+        let longBreak = {{ long_break }};
+        let cycles = {{ cycles }};
+        let currentCycle = 0;
+        let isWorkTime = true;
+
+        function formatTime(seconds) {
+            let hours = Math.floor(seconds / 3600);
+            let minutes = Math.floor((seconds % 3600) / 60);
+            let secs = seconds % 60;
+
+            return [hours, minutes, secs]
+                .map(unit => String(unit).padStart(2, '0'))
+                .join(':');
+        }
+
+        function startTimer(duration, display) {
+            let timer = duration;
+            let interval = setInterval(function () {
+                let hours = Math.floor(timer / 3600);
+                let minutes = Math.floor((timer % 3600) / 60);
+                let seconds = timer % 60;
+
+                hours = hours < 10 ? "0" + hours : hours;
+                minutes = minutes < 10 ? "0" + minutes : minutes;
+                seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                display.textContent = hours + ":" + minutes + ":" + seconds;
+
+                if (--timer < 0) {
+                    clearInterval(interval);
+                    if (isWorkTime) {
+                        currentCycle++;
+                        if (currentCycle % cycles === 0) {
+                            alert("Time for a long break!");
+                            isWorkTime = false;
+                            startTimer(longBreak, display);
+                        } else {
+                            alert("Time for a short break!");
+                            isWorkTime = false;
+                            startTimer(shortBreak, display);
+                        }
+                    } else {
+                        if (currentCycle % cycles === 0) {
+                            alert("Long break is over, you have completed your cycles!");
+                            window.location.href = "{{ url_for('index') }}";
+                        } else {
+                            alert("Time to start working again!");
+                            isWorkTime = true;
+                            startTimer(workTime, display);
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        window.onload = function () {
+            let display = document.querySelector('#time');
+            startTimer(workTime, display);
+        };
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Pomodoro Timer for {{ activity_name }}</h1>
+        <div id="time">00:00:00</div>
+        <br>
+        <a href="{{ url_for('index') }}">Back to Home</a>
+    </div>
+</body>
+</html>
